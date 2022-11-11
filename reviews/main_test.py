@@ -1,14 +1,18 @@
 import telegram
 import logging
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove,
+                      InlineKeyboardButton, InlineKeyboardMarkup)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
-                          ConversationHandler, CallbackContext)
+                          ConversationHandler, CallbackQueryHandler)
+
+from db import init_db, get_review, add_message
 
 import os
 
 from dotenv import load_dotenv
 
 load_dotenv()
+init_db()
 
 secret_token = os.getenv('TOKEN')
 secret_chat_id = os.getenv('CHAT_ID')
@@ -16,6 +20,10 @@ secret_feedback_chat_id = os.getenv('FEEDBACK_USER_ID')
 
 reply_keyboard = [['Confirm', 'Restart']]
 markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True, one_time_keyboard=True)
+
+# reply_keyboard_admin = [['/feedback']]
+# markup_admin = ReplyKeyboardMarkup(reply_keyboard_admin, resize_keyboard=True, one_time_keyboard=True)
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -147,56 +155,22 @@ def link(update, context):
 
     return CONFIRMATION
 
-def confirmation(update, context: CallbackContext):
+def confirmation(update, context):
     user_data = context.user_data
     user = update.message.from_user
     update.message.reply_text('Спасибо! Информация будет отправлена менеджеру на модерацию', reply_markup=ReplyKeyboardRemove())
-    bot.send_photo(chat_id=secret_feedback_chat_id,
-                   reply = update.message.reply_to_message,
-                   photo=open(f'{user.first_name}_photo.jpg', 'rb'),
+    bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'{user.first_name}_photo.jpg', 'rb'), 
                    caption="Новый отзыв от пользователя {}".format(user.name) + ":\n {}".format(facts_to_str(user_data)),
-                   parse_mode=telegram.ParseMode.HTML
-                   )
+                   parse_mode=telegram.ParseMode.HTML)
+    print(user_data)
 
-
-def do_echo(update: Update, context: CallbackContext):
-    chat_id = update.message.chat_id
-
-    if chat_id == FEEDBACK_USER_ID:
-        # Смотрим на реплаи
-        error_message = None
-        reply = update.message.reply_to_message
-        if reply:
-            forward_from = reply.forward_from
-            if forward_from:
-                text = 'Сообщение от автора канала:\n\n' + update.message.text
-                context.bot.send_message(
-                    chat_id=forward_from.id,
-                    text=text,
-                )
-                update.message.reply_text(
-                    text='Сообщение было отправлено',
-                )
-            else:
-                error_message = 'Нельзя ответить самому себе'
-        else:
-            error_message = 'Сделайте reply чтобы ответить автору сообщения'
-
-        # Отправить сообщение об ошибке если оно есть
-        if error_message is not None:
-            update.message.reply_text(
-                text=error_message,
-            )
-    else:
-        # Пересылать всё как есть
-        update.message.forward(
-            chat_id=FEEDBACK_USER_ID,
-        )
-        update.message.reply_text(
-            text='Сообщение было отправлено',
-        )
-
-
+    add_message(
+        user_id=user.id,
+        self_fullname=user_data['self_fullname'],
+        company_name=user_data['company_name'],
+        review=user_data['review'],
+        link=user_data['link']
+    )
 
 def cancel(update, _):
     user = update.message.from_user
@@ -211,6 +185,37 @@ def cancel(update, _):
     )
     return ConversationHandler.END
 
+
+# это нужно сделать
+#def find_review(update, context):
+#    chat = update.effective_chat
+#    messages = get_review(chat_id=chat.id)
+
+
+def find_review(update, context):
+    chat = update.effective_chat
+    count = get_review
+    text = f'У вас {count} сообщений!'
+    context.bot.send_message(
+        chat_id=chat.id,
+        text=text
+    )
+
+
+
+#    chat = update.effective_chat
+#    context.bot.send_message(chat_id=chat.id, text='Введите название компании, которую хотите найти')
+#    result = get_review
+#    text = f'Возможно вы имели {result}'
+#
+#    update.message.reply_text(
+#        text=text,
+#    )
+
+
+
+
+
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -221,6 +226,7 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('help', help))
+    updater.dispatcher.add_handler(CommandHandler('find_review', find_review))
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('leave_review', leave_review)],
@@ -240,6 +246,7 @@ def main():
     )
 
     updater.dispatcher.add_handler(conv_handler)
+
 
     updater.start_polling()
     updater.idle()

@@ -1,14 +1,18 @@
 import telegram
 import logging
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove,
+                      InlineKeyboardButton, InlineKeyboardMarkup)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
-                          ConversationHandler)
+                          ConversationHandler, CallbackQueryHandler)
+
+from db import init_db, get_review, add_message
 
 import os
 
 from dotenv import load_dotenv
 
 load_dotenv()
+init_db()
 
 secret_token = os.getenv('TOKEN')
 secret_chat_id = os.getenv('CHAT_ID')
@@ -154,6 +158,15 @@ def confirmation(update, context):
     bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'{user.first_name}_photo.jpg', 'rb'), 
                    caption="Новый отзыв от пользователя {}".format(user.name) + ":\n {}".format(facts_to_str(user_data)),
                    parse_mode=telegram.ParseMode.HTML)
+    print(user_data)
+
+    add_message(
+        user_id=user.id,
+        self_fullname=user_data['self_fullname'],
+        company_name=user_data['company_name'],
+        review=user_data['review'],
+        link=user_data['link']
+    )
 
 
 def cancel(update, _):
@@ -169,6 +182,16 @@ def cancel(update, _):
     )
     return ConversationHandler.END
 
+def find_review(update, context):
+    pass
+    chat = update.effective_chat
+    count = get_review
+    text = f'У вас {count} сообщений!'
+    context.bot.send_message(
+        chat_id=chat.id,
+        text=text
+    )
+
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -179,6 +202,7 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(CommandHandler('help', help))
+    updater.dispatcher.add_handler(CommandHandler('find_review', find_review))
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('leave_review', leave_review)],
@@ -198,6 +222,7 @@ def main():
     )
 
     updater.dispatcher.add_handler(conv_handler)
+
 
     updater.start_polling()
     updater.idle()
