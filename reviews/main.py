@@ -1,11 +1,15 @@
 import telegram
 import logging
+from telegram import Update
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove,
                       InlineKeyboardButton, InlineKeyboardMarkup)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, CallbackQueryHandler)
 
-from db import init_db, get_review, add_message
+from telegram.ext import CallbackContext
+
+from db import (init_db, get_review, add_message, count_messages, list_messages,
+                list_of_designers)
 
 import os
 
@@ -18,7 +22,7 @@ secret_token = os.getenv('TOKEN')
 secret_chat_id = os.getenv('CHAT_ID')
 secret_feedback_chat_id = os.getenv('FEEDBACK_USER_ID')
 
-reply_keyboard = [['Confirm', 'Restart']]
+reply_keyboard = [['Подтвердить', 'Заново']]
 markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True, one_time_keyboard=True)
 
 logging.basicConfig(
@@ -28,32 +32,33 @@ logger = logging.getLogger(__name__)
 
 bot = telegram.Bot(token=secret_token)
 
-
 def start(update, context):
     chat = update.effective_chat
     name = update.message.chat.first_name
-    button = ReplyKeyboardMarkup([['/leave_review'], ['/find_review'], ['/help']], resize_keyboard=True)
+    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
     context.bot.send_message(
         chat_id=chat.id,
         text='Привет, {}. Я бот, который позволит тебе найти или же оставить отзыв о компаниях и даже людях!\n'
              'Давай расскажу тебе, что умею: \n'
-             'При нажатии команды "/leave_review", ты можешь оставить отзыв.\n'
-             'При нажатии команды "/find_review", ты можешь найти отзыв.\n'
-             'Если возникнут вопросы, то ты всегда можешь нажать "/help".\n'.format(name),
+             'При нажатии команды "Оставить отзыв", ты можешь оставить отзыв.\n'
+             'При нажатии команды "Найти отзыв", ты можешь найти отзыв.\n'
+             'Если возникнут вопросы, то ты всегда поможет команда "Помощь".\n'.format(name),
         reply_markup=button
     )
 
 def help(update, context):
     chat = update.effective_chat
+    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
     context.bot.send_message(
         chat_id=chat.id,
         text='Давай расскажу тебе подробнее про каждую из команд: \n'
-             '-Команда /leave_review необходима для того, чтобы запустить процесс написания бота. \n'
+             'Нажмите на команду "Оставить отзыв" для написания отзыва. \n'
              'Бот будет задавать тебе вопросы по поводу компании, по итогам которой будет сформирован отзыв. \n'
              'Если что-то перепутали или не хотите отвечать, то после каждого вопроса есть команды /skip или же /cancel. \n'
              'В конце вам нужно будет проверить корректность заполнения отзыва. \n'
              'Отзыв будет отправлен модератору и если все пройдет удачно, то ваш отзыв будет опубликован в канале, \n'
-             'а если будут ошибки, то модератор отправит вам его обратно с комментарием.'
+             'а если будут ошибки, то модератор отправит вам его обратно с комментарием.',
+        reply_markup=button
     )
 
 def facts_to_str(user_data):
@@ -63,36 +68,58 @@ def facts_to_str(user_data):
 
     return "\n".join(facts).join(['\n', '\n'])
 
-
-SELF_FULLNAME, COMPANY_NAME, REVIEW, PHOTO, LINK, CONFIRMATION = range(6)
+NAME, WORKER, ACTIVITY, REVIEW, PHOTO, LINK, CONFIRMATION = range(7)
 
 def leave_review(update, context):
     update.message.reply_text(
         'Для начала необходимо узнать ваше имя.\n\n'
-        'Команда /cancel, чтобы прекратить написание отзыва.')
-    return SELF_FULLNAME
+        'Если не хотите указывать имя, то нажмите на кнопку "Анонимно"\n\n'
+        'Команда /cancel, чтобы прекратить написание отзыва.',
+        reply_markup=ReplyKeyboardMarkup([['Анонимно']], resize_keyboard=True),
+        )
+    return NAME
 
-def self_fullname(update, context):
+def name(update, context):
     user = update.message.from_user
     user_data = context.user_data
-    category = 'self_fullname'
+    category = 'Имя'
     text = update.message.text
     user_data[category] = text
     logger.info("Собственное имя %s: %s", user.first_name, update.message.text)
     update.message.reply_text('Спасибо. Пойдем дальше! \n'
-                              'Теперь введите название компании о которой хотите оставить отзыв.\n\n'
+                              'Теперь введите имя человека о котором хотите оставить отзыв.\n\n'
                               'Команда /cancel, чтобы прекратить написание отзыва.',
                               reply_markup=ReplyKeyboardRemove(),
                               )
-    return COMPANY_NAME
+    return WORKER
 
-def company_name(update, context):
+def worker(update, context):
     user = update.message.from_user
     user_data = context.user_data
-    category = 'company_name'
+    category = 'О ком отзыв'
     text = update.message.text
     user_data[category] = text
-    logger.info("Название компании %s: %s", user.first_name, update.message.text)
+    logger.info("Отзыв будет писаться о %s: %s", user.first_name, update.message.text)
+    update.message.reply_text('Отлично! Теперь выберите из какой сферы данный человек.\n\n'
+                              'Команда /cancel, чтобы прекратить написание отзыва.',
+                              reply_markup=ReplyKeyboardMarkup([['Дизайн'], 
+                                                                ['Таргет'], 
+                                                                ['Менеджмент'],
+                                                                ['Контент-менеджер'],
+                                                                ['Видео-мейкер'],
+                                                                ['Фотограф'],
+                                                                ['Копирайтер']
+                                                                ], resize_keyboard=True),
+                              )
+    return ACTIVITY
+
+def activity(update, context):
+    user = update.message.from_user
+    user_data = context.user_data
+    category = 'Сфера деятельности'
+    text = update.message.text
+    user_data[category] = text
+    logger.info("Сфера деятельности %s: %s", user.first_name, update.message.text)
     update.message.reply_text('Отлично! Теперь напишите сам отзыв.\n\n'
                               'Команда /cancel, чтобы прекратить написание отзыва.',
                               reply_markup=ReplyKeyboardRemove(),
@@ -102,7 +129,7 @@ def company_name(update, context):
 def review(update, context):
     user = update.message.from_user
     user_data = context.user_data
-    category = 'review'
+    category = 'Отзыв'
     text = update.message.text
     user_data[category] = text    
     logger.info("Отзыв %s: %s", user.first_name, update.message.text)
@@ -138,11 +165,10 @@ def skip_photo(update, context):
                               )
     return LINK
 
-
 def link(update, context):
     user = update.message.from_user
     user_data = context.user_data
-    category = 'link'
+    category = 'Ссылка'
     text = update.message.text
     user_data[category] = text 
     logger.info("Ссылка %s: %s", user.first_name, update.message.text)
@@ -158,65 +184,151 @@ def confirmation(update, context):
     bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'{user.first_name}_photo.jpg', 'rb'), 
                    caption="Новый отзыв от пользователя {}".format(user.name) + ":\n {}".format(facts_to_str(user_data)),
                    parse_mode=telegram.ParseMode.HTML)
-    print(user_data)
 
     add_message(
         user_id=user.id,
-        self_fullname=user_data['self_fullname'],
-        company_name=user_data['company_name'],
-        review=user_data['review'],
-        link=user_data['link']
+        name=user_data['Имя'],
+        worker=user_data['О ком отзыв'],
+        activity=user_data['Сфера деятельности'],
+        review=user_data['Отзыв'],
+        link=user_data['Ссылка']
     )
-
 
 def cancel(update, _):
     user = update.message.from_user
     logger.info("Пользователь %s отменил разговор.", user.first_name)
+    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
     update.message.reply_text(
         'Мое дело предложить - Ваше отказаться \n'
         'Ждем вас снова!\n\n'
-        'Если хотите написать отзыв то нажмите /leave_review \n'
-        'Если хотите найти отзыв то нажмите /find_review \n'
-        'Во всех остальных случаях поможет /help', 
-        reply_markup=ReplyKeyboardRemove()
+        'Если хотите написать отзыв то нажмите "Оставить отзыв" \n'
+        'Если хотите найти отзыв то нажмите "Найти отзыв" \n'
+        'Во всех остальных случаях поможет команда "Помощь"', 
+        reply_markup=button
     )
     return ConversationHandler.END
-
-def find_review(update, context):
-    pass
-    chat = update.effective_chat
-    count = get_review
-    text = f'У вас {count} сообщений!'
-    context.bot.send_message(
-        chat_id=chat.id,
-        text=text
-    )
 
 def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+COMMAND_COUNT = 'count'
+COMMAND_LIST = 'list'
+COMMAND_ACTIVITY = 'choose'
+
+def get_keyboard():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='Кол-во сообщений', callback_data=COMMAND_COUNT),
+            ],
+            [
+                InlineKeyboardButton(text='Мои сообщения', callback_data=COMMAND_LIST),
+            ],
+            [
+                InlineKeyboardButton(text='Найти по профессии', callback_data=COMMAND_ACTIVITY),
+            ],
+        ],
+    )
+COMMAND_DESIGN = 'designer'
+COMMAND_TARGET = 'target'
+COMMAND_MENEDGMENT = 'menedger'
+COMMAND_CONTENT_MENEDGER = 'content_menedger'
+COMMAND_VIDEO_MAKER = 'video_maker'
+COMMAND_PHOTOGRAPHER = 'photographer'
+COMMAND_COPYWRITER = 'copywriter'
+
+def get_activities():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='Дизайн', callback_data=COMMAND_DESIGN),
+            ],
+            [
+                InlineKeyboardButton(text='Таргет', callback_data=COMMAND_TARGET),
+            ],
+            [
+                InlineKeyboardButton(text='Менеджмент', callback_data=COMMAND_MENEDGMENT),
+            ],
+            [
+                InlineKeyboardButton(text='Контент-менеджер', callback_data=COMMAND_CONTENT_MENEDGER),
+            ],
+            [
+                InlineKeyboardButton(text='Видео-мейкер', callback_data=COMMAND_VIDEO_MAKER),
+            ],
+            [
+                InlineKeyboardButton(text='Фотограф', callback_data=COMMAND_PHOTOGRAPHER),
+            ],
+            [
+                InlineKeyboardButton(text='Копирайтер', callback_data=COMMAND_COPYWRITER),
+            ],
+        ],
+    )
+
+
+def callback_handler(update: Update, context: CallbackContext):
+    user = update.effective_user
+    callback_data = update.callback_query.data
+
+    if callback_data == COMMAND_COUNT:
+        count = count_messages(user_id=user.id)
+        text = f'У вас {count} сообщений!'
+    elif callback_data == COMMAND_LIST:
+        messages = list_messages(user_id=user.id, limit=5)
+        text = '\n\n'.join([f'О ком отзыв: {message_worker} \nИз какой сферы человек:{message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_worker, message_activity, message_review, message_link in messages])
+    elif callback_data == COMMAND_ACTIVITY:
+        # Показать следующий экран клавиатуры
+        # (оставить тот же текст, но указать другой массив кнопок)
+        update.callback_query.edit_message_text(
+            text="Выберите профессию, по которой хотите найти отзывы",
+            reply_markup=get_activities(),
+        )
+    elif callback_data == COMMAND_DESIGN:
+        messages = list_of_designers(user_id=user.id, limit=5)
+        text = '\n\n'.join([f'{message_name} \n {message_worker} \n {message_activity} \n {message_review} \n {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+    else:
+        text = 'Произошла ошибка'
+
+    update.effective_message.reply_text(
+        text=text,
+    )
+
+
+def find_review(update, context):
+    update.message.reply_text(
+        'Тестируем\n\n'
+        'Если не хотите указывать имя, то нажмите на кнопку "Анонимно"\n\n'
+        'Команда /cancel, чтобы прекратить написание отзыва.',
+        reply_markup=get_keyboard(),
+        )
+
+
 def main():
 
     updater = Updater(token=secret_token)
 
+    updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
+
     updater.dispatcher.add_handler(CommandHandler('start', start))
-    updater.dispatcher.add_handler(CommandHandler('help', help))
-    updater.dispatcher.add_handler(CommandHandler('find_review', find_review))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Помощь$'), help))
+    updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Найти отзыв$'), find_review))
 
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('leave_review', leave_review)],
+        [MessageHandler(Filters.regex('^Оставить отзыв$'), leave_review)],
 
         states={
-            SELF_FULLNAME: [MessageHandler(Filters.text & ~Filters.command, self_fullname)],
-            COMPANY_NAME: [MessageHandler(Filters.text & ~Filters.command, company_name)],
+            NAME: [MessageHandler(Filters.text & ~Filters.command, name)],
+            WORKER: [MessageHandler(Filters.text & ~Filters.command, worker)],
+            ACTIVITY: [MessageHandler(Filters.text & ~Filters.command, activity)],
             REVIEW: [MessageHandler(Filters.text & ~Filters.command, review)],
             PHOTO: [MessageHandler(Filters.photo, photo), CommandHandler('skip', skip_photo)],
             LINK: [MessageHandler(Filters.text & ~Filters.command, link)],
-            CONFIRMATION: [MessageHandler(Filters.regex('^Confirm$'),
+            CONFIRMATION: [MessageHandler(Filters.regex('^Подтвердить$'),
                                       confirmation),
-            MessageHandler(Filters.regex('^Restart$'), leave_review)
-                       ]
+            MessageHandler(Filters.regex('^Заново$'), leave_review),
+            MessageHandler(Filters.regex('^Оставить отзыв$'), leave_review)
+                       ],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )

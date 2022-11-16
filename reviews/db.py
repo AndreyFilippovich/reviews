@@ -27,7 +27,6 @@ def ensure_connection(func):
 
     return inner
 
-
 @ensure_connection
 def init_db(conn, force: bool = False):
 
@@ -40,8 +39,9 @@ def init_db(conn, force: bool = False):
         CREATE TABLE IF NOT EXISTS user_review (
             id          INTEGER PRIMARY KEY,
             user_id     INTEGER NOT NULL,
-            self_fullname        TEXT NOT NULL,
-            company_name        TEXT NOT NULL,
+            name        TEXT NOT NULL,
+            worker        TEXT NOT NULL,
+            activity        TEXT NOT NULL,
             review        TEXT NOT NULL,
             link        TEXT NOT NULL
         )
@@ -50,17 +50,36 @@ def init_db(conn, force: bool = False):
     conn.commit()
 
 @ensure_connection
-def add_message(conn, user_id: int, self_fullname: str, company_name: str, review: str, link: str, ):
+def add_message(conn, user_id: int, name: str, worker: str, activity: str, review: str, link: str,):
     c = conn.cursor()
-    c.execute('INSERT INTO user_review (user_id, self_fullname, company_name, review, link) VALUES (?, ?, ?, ?, ?)', (
+    c.execute('INSERT INTO user_review (user_id, name, worker, activity, review, link) VALUES (?, ?, ?, ?, ?, ?)', (
                                                                          user_id,
-                                                                         self_fullname,
-                                                                         company_name,
+                                                                         name,
+                                                                         worker,
+                                                                         activity,
                                                                          review,
                                                                          link
                                                                          ))
     conn.commit()
 
+@ensure_connection
+def count_messages(conn, user_id: int):
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM user_review WHERE user_id = ? LIMIT 1', (user_id, ))
+    (res, ) = c.fetchone()
+    return res
+
+@ensure_connection
+def list_messages(conn, user_id: int, limit: int = 10):
+    c = conn.cursor()
+    c.execute('SELECT worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ?', (user_id, limit))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_designers(conn, user_id: int, limit: int = 10):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity IN Дизайн', (user_id, limit))
+    return c.fetchall()
 
 #@ensure_connection
 #def get_review(conn, company_name: str):
