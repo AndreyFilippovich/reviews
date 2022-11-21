@@ -8,8 +8,14 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
 
 from telegram.ext import CallbackContext
 
-from db import (init_db, get_review, add_message, count_messages, list_messages,
-                list_of_designers)
+from db import (init_db, add_message, count_messages, list_messages,
+                list_of_designers, list_of_target, list_of_menedger,
+                list_of_content_menedger, list_of_videograph,
+                list_of_photographer, list_of_copywriter,
+                list_of_contekstolog, list_of_avitolog,
+                list_of_smm, list_of_chat_bots,
+                list_of_content_maker, list_of_marketolog,
+                list_of_producer, list_of_blogger_manager)
 
 import os
 
@@ -234,11 +240,22 @@ COMMAND_DESIGN = 'designer'
 COMMAND_TARGET = 'target'
 COMMAND_MENEDGMENT = 'menedger'
 COMMAND_CONTENT_MENEDGER = 'content_menedger'
-COMMAND_VIDEO_MAKER = 'video_maker'
+COMMAND_VIDEOGRAPH = 'videograph'
 COMMAND_PHOTOGRAPHER = 'photographer'
 COMMAND_COPYWRITER = 'copywriter'
+COMMAND_MORE = 'more'
 
-def get_activities():
+COMMAND_KONTEKSTOLOG = 'kontekstolog'
+COMMAND_AVITOLOG = 'avitolog'
+COMMAND_SMM = 'SMM'
+COMMAND_CHAT_BOTY ='chat-bots'
+COMMAND_CONTENT_MAKER ='content maker'
+COMMAND_MARKETOLOG = 'marketolog'
+COMMAND_PRODUCER = 'producer'
+COMMAND_BLOGGER_MANAGER = 'blogger manager'
+COMMAND_BACK = 'back'
+
+def get_activities_page_one():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -254,13 +271,49 @@ def get_activities():
                 InlineKeyboardButton(text='Контент-менеджер', callback_data=COMMAND_CONTENT_MENEDGER),
             ],
             [
-                InlineKeyboardButton(text='Видео-мейкер', callback_data=COMMAND_VIDEO_MAKER),
+                InlineKeyboardButton(text='Видеограф', callback_data=COMMAND_VIDEOGRAPH),
             ],
             [
                 InlineKeyboardButton(text='Фотограф', callback_data=COMMAND_PHOTOGRAPHER),
             ],
             [
                 InlineKeyboardButton(text='Копирайтер', callback_data=COMMAND_COPYWRITER),
+            ],
+            [
+                InlineKeyboardButton(text='Еще...', callback_data=COMMAND_MORE),
+            ],
+        ],
+    )
+
+def get_activities_page_two():
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='Контекстная реклама', callback_data=COMMAND_KONTEKSTOLOG),
+            ],
+            [
+                InlineKeyboardButton(text='Авитолог', callback_data=COMMAND_AVITOLOG),
+            ],
+            [
+                InlineKeyboardButton(text='SMM-щик', callback_data=COMMAND_SMM),
+            ],
+            [
+                InlineKeyboardButton(text='Разработчик чат-ботов', callback_data=COMMAND_CHAT_BOTY),
+            ],
+            [
+                InlineKeyboardButton(text='Контент-мейкер', callback_data=COMMAND_CONTENT_MAKER),
+            ],
+            [
+                InlineKeyboardButton(text='Маркетолог', callback_data=COMMAND_MARKETOLOG),
+            ],
+            [
+                InlineKeyboardButton(text='Продюсер', callback_data=COMMAND_PRODUCER),
+            ],
+            [
+                InlineKeyboardButton(text='Менеджер по блогерам', callback_data=COMMAND_BLOGGER_MANAGER),
+            ],
+            [
+                InlineKeyboardButton(text='Назад', callback_data=COMMAND_BACK),
             ],
         ],
     )
@@ -269,6 +322,7 @@ def get_activities():
 def callback_handler(update: Update, context: CallbackContext):
     user = update.effective_user
     callback_data = update.callback_query.data
+    current_text = update.effective_message.text
 
     if callback_data == COMMAND_COUNT:
         count = count_messages(user_id=user.id)
@@ -276,23 +330,151 @@ def callback_handler(update: Update, context: CallbackContext):
     elif callback_data == COMMAND_LIST:
         messages = list_messages(user_id=user.id, limit=5)
         text = '\n\n'.join([f'О ком отзыв: {message_worker} \nИз какой сферы человек:{message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_worker, message_activity, message_review, message_link in messages])
+        update.effective_message.reply_text(
+            text=text,
+        )    
     elif callback_data == COMMAND_ACTIVITY:
         # Показать следующий экран клавиатуры
         # (оставить тот же текст, но указать другой массив кнопок)
         update.callback_query.edit_message_text(
             text="Выберите профессию, по которой хотите найти отзывы",
-            reply_markup=get_activities(),
+            reply_markup=get_activities_page_one(),
         )
     elif callback_data == COMMAND_DESIGN:
-        messages = list_of_designers(user_id=user.id, limit=5)
-        text = '\n\n'.join([f'{message_name} \n {message_worker} \n {message_activity} \n {message_review} \n {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+        messages = list_of_designers(activities='Дизайн')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+        update.effective_message.reply_text(
+            text=text,
+        )
 
-    else:
-        text = 'Произошла ошибка'
+    elif callback_data == COMMAND_TARGET:
+        messages = list_of_designers(activities='Таргет')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+        update.effective_message.reply_text(
+            text=text,
+        )
 
-    update.effective_message.reply_text(
-        text=text,
-    )
+    elif callback_data == COMMAND_MENEDGMENT:
+        messages = list_of_designers(activities='Менеджмент')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_CONTENT_MENEDGER:
+        try:
+            messages = list_of_designers(activities='Контент-менеджер')
+            text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+        except Exception as error:
+            text = 'Ошибка'
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_VIDEOGRAPH:
+        messages = list_of_designers(activities='Видеограф')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_PHOTOGRAPHER:
+        messages = list_of_designers(activities='Фотограф')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_COPYWRITER:
+        messages = list_of_designers(activities='Копирайтер')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_KONTEKSTOLOG:
+        messages = list_of_designers(activities='Контекстная реклама')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_AVITOLOG:
+        messages = list_of_designers(activities='Авитолог')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_SMM:
+        messages = list_of_designers(activities='SMM-щик')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_CHAT_BOTY:
+        messages = list_of_designers(activities='Разработчик чат-ботов')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_CONTENT_MAKER:
+        messages = list_of_designers(activities='Контент-мейкер')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_MARKETOLOG:
+        messages = list_of_designers(activities='Маркетолог')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_PRODUCER:
+        messages = list_of_designers(activities='Продюсер')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_BLOGGER_MANAGER:
+        messages = list_of_designers(activities='Менеджер по блогерам')
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
+
+        update.effective_message.reply_text(
+            text=text,
+        )
+
+    elif callback_data == COMMAND_MORE:
+        # Показать следующий экран клавиатуры
+        # (оставить тот же текст, но указать другой массив кнопок)
+        update.callback_query.edit_message_text(
+            text=current_text,
+            reply_markup=get_activities_page_two(),
+        )
+
+    elif callback_data == COMMAND_BACK:
+        # Показать предыдущий экран клавиатуры
+        # (оставить тот же текст, но указать другой массив кнопок)
+        update.callback_query.edit_message_text(
+            text=current_text,
+            reply_markup=get_activities_page_one(),
+        )
 
 
 def find_review(update, context):

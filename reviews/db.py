@@ -76,21 +76,91 @@ def list_messages(conn, user_id: int, limit: int = 10):
     return c.fetchall()
 
 @ensure_connection
-def list_of_designers(conn, user_id: int, limit: int = 10):
+def list_of_designers(conn, activities = 'Дизайн'):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity IN Дизайн', (user_id, limit))
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
     return c.fetchall()
 
-#@ensure_connection
-#def get_review(conn, company_name: str):
-#    c = conn.cursor()
-#    c.execute('SELECT company_name FROM user_review WHERE company_name = ?', (company_name))
-#    return c.fetchone()
+@ensure_connection
+def list_of_target(conn, activities = 'Таргет'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
 
 @ensure_connection
-def get_review(conn, user_id: int):
+def list_of_menedger(conn, activities = 'Менеджмент'):
     c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM user_review WHERE user_id = ? LIMIT 1', (user_id, ))
-    (res, ) = c.fetchone()
-    return res
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
 
+@ensure_connection
+def list_of_content_menedger(conn, activities = 'Контент-менеджер'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_videograph(conn, activities = 'Видеограф'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_photographer(conn, activities = 'Фотограф'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_copywriter(conn, activities = 'Копирайтер'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_contekstolog(conn, activities = 'Контекстная реклама'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_avitolog(conn, activities = 'Авитолог'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_smm(conn, activities = 'SMM-щик'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_chat_bots(conn, activities = 'Разработчик чат-ботов'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_content_maker(conn, activities = 'Контент-мейкер'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_marketolog(conn, activities = 'Маркетолог'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_producer(conn, activities = 'Продюсер'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
+
+@ensure_connection
+def list_of_blogger_manager(conn, activities = 'Менеджер по блогерам'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    return c.fetchall()
