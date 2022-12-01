@@ -63,9 +63,9 @@ def add_message(conn, user_id: int, name: str, worker: str, activity: str, revie
     conn.commit()
 
 @ensure_connection
-def count_messages(conn, user_id: int):
+def all_workers(conn, worker ='', limit: int = 10, offset: int = '20'):
     c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM user_review WHERE user_id = ? LIMIT 1', (user_id, ))
+    c.execute('SELECT worker FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ? OFFSET ?', (worker, limit, offset))
     (res, ) = c.fetchone()
     return res
 
@@ -76,91 +76,15 @@ def list_messages(conn, user_id: int, limit: int = 10):
     return c.fetchall()
 
 @ensure_connection
-def list_of_designers(conn, activities = 'Дизайн'):
+def list_of_workers(conn, worker = '', limit: int = 10):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ?', (worker, limit))
     return c.fetchall()
 
-@ensure_connection
-def list_of_target(conn, activities = 'Таргет'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
+'''Функции для запросов к БД по дизайнерам'''
 
 @ensure_connection
-def list_of_menedger(conn, activities = 'Менеджмент'):
+def list_of_activities(conn, activities = '', limit: int = 10, offset: int = '20'):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_content_menedger(conn, activities = 'Контент-менеджер'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_videograph(conn, activities = 'Видеограф'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_photographer(conn, activities = 'Фотограф'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_copywriter(conn, activities = 'Копирайтер'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_contekstolog(conn, activities = 'Контекстная реклама'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_avitolog(conn, activities = 'Авитолог'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_smm(conn, activities = 'SMM-щик'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_chat_bots(conn, activities = 'Разработчик чат-ботов'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_content_maker(conn, activities = 'Контент-мейкер'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_marketolog(conn, activities = 'Маркетолог'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_producer(conn, activities = 'Продюсер'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
-    return c.fetchall()
-
-@ensure_connection
-def list_of_blogger_manager(conn, activities = 'Менеджер по блогерам'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ?', (activities,))
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ? ORDER BY id DESC LIMIT ? OFFSET ?', (activities, limit, offset))
     return c.fetchall()

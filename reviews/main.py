@@ -1,21 +1,12 @@
 import telegram
 import logging
-from telegram import Update
-from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove,
-                      InlineKeyboardButton, InlineKeyboardMarkup)
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
                           ConversationHandler, CallbackQueryHandler)
 
-from telegram.ext import CallbackContext
+from buttons import *
 
-from db import (init_db, add_message, count_messages, list_messages,
-                list_of_designers, list_of_target, list_of_menedger,
-                list_of_content_menedger, list_of_videograph,
-                list_of_photographer, list_of_copywriter,
-                list_of_contekstolog, list_of_avitolog,
-                list_of_smm, list_of_chat_bots,
-                list_of_content_maker, list_of_marketolog,
-                list_of_producer, list_of_blogger_manager)
+from db import init_db, add_message, list_of_workers
 
 import os
 
@@ -41,7 +32,7 @@ bot = telegram.Bot(token=secret_token)
 def start(update, context):
     chat = update.effective_chat
     name = update.message.chat.first_name
-    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
+    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True, one_time_keyboard=True)
     context.bot.send_message(
         chat_id=chat.id,
         text='Привет, {}. Я бот, который позволит тебе найти или же оставить отзыв о компаниях и даже людях!\n'
@@ -52,9 +43,13 @@ def start(update, context):
         reply_markup=button
     )
 
+main_button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
+choose_button=ReplyKeyboardMarkup([['Дизайн'], ['Таргет'], ['Менеджмент'], ['Контент-менеджер'], ['Видео-мейкер'], ['Фотограф'],
+                                  ['Копирайтер'], ['Контекстная реклама'], ['Авитолог'], ['SMM-щик'], ['Разработчик чат-ботов'],
+                                  ['Контент-мейкер'], ['Маркетолог'], ['Продюсер'], ['Менеджер по блогерам']], resize_keyboard=True, one_time_keyboard=True)
+
 def help(update, context):
     chat = update.effective_chat
-    button = ReplyKeyboardMarkup([['Оставить отзыв'], ['Найти отзыв'], ['Помощь']], resize_keyboard=True)
     context.bot.send_message(
         chat_id=chat.id,
         text='Давай расскажу тебе подробнее про каждую из команд: \n'
@@ -64,7 +59,7 @@ def help(update, context):
              'В конце вам нужно будет проверить корректность заполнения отзыва. \n'
              'Отзыв будет отправлен модератору и если все пройдет удачно, то ваш отзыв будет опубликован в канале, \n'
              'а если будут ошибки, то модератор отправит вам его обратно с комментарием.',
-        reply_markup=button
+        reply_markup=main_button
     )
 
 def facts_to_str(user_data):
@@ -108,14 +103,7 @@ def worker(update, context):
     logger.info("Отзыв будет писаться о %s: %s", user.first_name, update.message.text)
     update.message.reply_text('Отлично! Теперь выберите из какой сферы данный человек.\n\n'
                               'Команда /cancel, чтобы прекратить написание отзыва.',
-                              reply_markup=ReplyKeyboardMarkup([['Дизайн'], 
-                                                                ['Таргет'], 
-                                                                ['Менеджмент'],
-                                                                ['Контент-менеджер'],
-                                                                ['Видео-мейкер'],
-                                                                ['Фотограф'],
-                                                                ['Копирайтер']
-                                                                ], resize_keyboard=True),
+                              reply_markup=choose_button,
                               )
     return ACTIVITY
 
@@ -184,12 +172,13 @@ def link(update, context):
     return CONFIRMATION
 
 def confirmation(update, context):
+    chat_id = update.message.chat_id
     user_data = context.user_data
     user = update.message.from_user
-    update.message.reply_text('Спасибо! Информация будет отправлена менеджеру на модерацию', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('Спасибо! Информация будет отправлена менеджеру на модерацию', reply_markup=main_button)
     bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'{user.first_name}_photo.jpg', 'rb'), 
                    caption="Новый отзыв от пользователя {}".format(user.name) + ":\n {}".format(facts_to_str(user_data)),
-                   parse_mode=telegram.ParseMode.HTML)
+                   parse_mode=telegram.ParseMode.HTML, reply_markup=manager_keyboard())
 
     add_message(
         user_id=user.id,
@@ -218,277 +207,60 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
-COMMAND_COUNT = 'count'
-COMMAND_LIST = 'list'
-COMMAND_ACTIVITY = 'choose'
-
-def get_keyboard():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text='Кол-во сообщений', callback_data=COMMAND_COUNT),
-            ],
-            [
-                InlineKeyboardButton(text='Мои сообщения', callback_data=COMMAND_LIST),
-            ],
-            [
-                InlineKeyboardButton(text='Найти по профессии', callback_data=COMMAND_ACTIVITY),
-            ],
-        ],
-    )
-COMMAND_DESIGN = 'designer'
-COMMAND_TARGET = 'target'
-COMMAND_MENEDGMENT = 'menedger'
-COMMAND_CONTENT_MENEDGER = 'content_menedger'
-COMMAND_VIDEOGRAPH = 'videograph'
-COMMAND_PHOTOGRAPHER = 'photographer'
-COMMAND_COPYWRITER = 'copywriter'
-COMMAND_MORE = 'more'
-
-COMMAND_KONTEKSTOLOG = 'kontekstolog'
-COMMAND_AVITOLOG = 'avitolog'
-COMMAND_SMM = 'SMM'
-COMMAND_CHAT_BOTY ='chat-bots'
-COMMAND_CONTENT_MAKER ='content maker'
-COMMAND_MARKETOLOG = 'marketolog'
-COMMAND_PRODUCER = 'producer'
-COMMAND_BLOGGER_MANAGER = 'blogger manager'
-COMMAND_BACK = 'back'
-
-def get_activities_page_one():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text='Дизайн', callback_data=COMMAND_DESIGN),
-            ],
-            [
-                InlineKeyboardButton(text='Таргет', callback_data=COMMAND_TARGET),
-            ],
-            [
-                InlineKeyboardButton(text='Менеджмент', callback_data=COMMAND_MENEDGMENT),
-            ],
-            [
-                InlineKeyboardButton(text='Контент-менеджер', callback_data=COMMAND_CONTENT_MENEDGER),
-            ],
-            [
-                InlineKeyboardButton(text='Видеограф', callback_data=COMMAND_VIDEOGRAPH),
-            ],
-            [
-                InlineKeyboardButton(text='Фотограф', callback_data=COMMAND_PHOTOGRAPHER),
-            ],
-            [
-                InlineKeyboardButton(text='Копирайтер', callback_data=COMMAND_COPYWRITER),
-            ],
-            [
-                InlineKeyboardButton(text='Еще...', callback_data=COMMAND_MORE),
-            ],
-        ],
-    )
-
-def get_activities_page_two():
-    return InlineKeyboardMarkup(
-        inline_keyboard=[
-            [
-                InlineKeyboardButton(text='Контекстная реклама', callback_data=COMMAND_KONTEKSTOLOG),
-            ],
-            [
-                InlineKeyboardButton(text='Авитолог', callback_data=COMMAND_AVITOLOG),
-            ],
-            [
-                InlineKeyboardButton(text='SMM-щик', callback_data=COMMAND_SMM),
-            ],
-            [
-                InlineKeyboardButton(text='Разработчик чат-ботов', callback_data=COMMAND_CHAT_BOTY),
-            ],
-            [
-                InlineKeyboardButton(text='Контент-мейкер', callback_data=COMMAND_CONTENT_MAKER),
-            ],
-            [
-                InlineKeyboardButton(text='Маркетолог', callback_data=COMMAND_MARKETOLOG),
-            ],
-            [
-                InlineKeyboardButton(text='Продюсер', callback_data=COMMAND_PRODUCER),
-            ],
-            [
-                InlineKeyboardButton(text='Менеджер по блогерам', callback_data=COMMAND_BLOGGER_MANAGER),
-            ],
-            [
-                InlineKeyboardButton(text='Назад', callback_data=COMMAND_BACK),
-            ],
-        ],
-    )
-
-
-def callback_handler(update: Update, context: CallbackContext):
-    user = update.effective_user
-    callback_data = update.callback_query.data
-    current_text = update.effective_message.text
-
-    if callback_data == COMMAND_COUNT:
-        count = count_messages(user_id=user.id)
-        text = f'У вас {count} сообщений!'
-    elif callback_data == COMMAND_LIST:
-        messages = list_messages(user_id=user.id, limit=5)
-        text = '\n\n'.join([f'О ком отзыв: {message_worker} \nИз какой сферы человек:{message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_worker, message_activity, message_review, message_link in messages])
-        update.effective_message.reply_text(
-            text=text,
-        )    
-    elif callback_data == COMMAND_ACTIVITY:
-        # Показать следующий экран клавиатуры
-        # (оставить тот же текст, но указать другой массив кнопок)
-        update.callback_query.edit_message_text(
-            text="Выберите профессию, по которой хотите найти отзывы",
-            reply_markup=get_activities_page_one(),
-        )
-    elif callback_data == COMMAND_DESIGN:
-        messages = list_of_designers(activities='Дизайн')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_TARGET:
-        messages = list_of_designers(activities='Таргет')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_MENEDGMENT:
-        messages = list_of_designers(activities='Менеджмент')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_CONTENT_MENEDGER:
-        try:
-            messages = list_of_designers(activities='Контент-менеджер')
-            text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-        except Exception as error:
-            text = 'Ошибка'
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_VIDEOGRAPH:
-        messages = list_of_designers(activities='Видеограф')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_PHOTOGRAPHER:
-        messages = list_of_designers(activities='Фотограф')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_COPYWRITER:
-        messages = list_of_designers(activities='Копирайтер')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_KONTEKSTOLOG:
-        messages = list_of_designers(activities='Контекстная реклама')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_AVITOLOG:
-        messages = list_of_designers(activities='Авитолог')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_SMM:
-        messages = list_of_designers(activities='SMM-щик')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_CHAT_BOTY:
-        messages = list_of_designers(activities='Разработчик чат-ботов')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_CONTENT_MAKER:
-        messages = list_of_designers(activities='Контент-мейкер')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_MARKETOLOG:
-        messages = list_of_designers(activities='Маркетолог')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_PRODUCER:
-        messages = list_of_designers(activities='Продюсер')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_BLOGGER_MANAGER:
-        messages = list_of_designers(activities='Менеджер по блогерам')
-        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages])
-
-        update.effective_message.reply_text(
-            text=text,
-        )
-
-    elif callback_data == COMMAND_MORE:
-        # Показать следующий экран клавиатуры
-        # (оставить тот же текст, но указать другой массив кнопок)
-        update.callback_query.edit_message_text(
-            text=current_text,
-            reply_markup=get_activities_page_two(),
-        )
-
-    elif callback_data == COMMAND_BACK:
-        # Показать предыдущий экран клавиатуры
-        # (оставить тот же текст, но указать другой массив кнопок)
-        update.callback_query.edit_message_text(
-            text=current_text,
-            reply_markup=get_activities_page_one(),
-        )
-
 
 def find_review(update, context):
     update.message.reply_text(
         'Тестируем\n\n'
         'Если не хотите указывать имя, то нажмите на кнопку "Анонимно"\n\n'
         'Команда /cancel, чтобы прекратить написание отзыва.',
-        reply_markup=get_keyboard(),
+        reply_markup=get_keyboard()
         )
+
+def facts_to_name(user_data):
+    facts = list() 
+    for key, value in user_data.items():
+        facts.append('{}'.format(value))
+
+    return value
+
+WORKER_NAME = range(1)
+
+def ask_worker_name(update, _):
+    update.message.reply_text(
+        'Введите имя человека, отзыв о котором хотите найти.'
+    )
+    return WORKER_NAME
+
+def finish_worker_name(update, context):
+    user_data = context.user_data
+    category = 'Имя'
+    text = update.message.text
+    user_data[category] = text
+    worker_name = facts_to_name(user_data)
+    messages = list_of_workers(worker=worker_name, limit=5)
+    if not messages:
+        text = 'Пробуем дальше'
+        update.effective_message.reply_text(
+            text = text,
+        )
+    update.effective_message.reply_text(
+        text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+    reply_markup = main_button,
+    )
+    return ConversationHandler.END
+
+# def get_all_workers(update, context):
+#     messages = all_workers(worker='', limit=5)
+#     update.message.reply_text(
+#         text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+#         reply_markup=get_keyboard()
+#         )
 
 
 def main():
 
     updater = Updater(token=secret_token)
+#     updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Посмотреть все имена$'), get_all_workers))
 
     updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
 
@@ -517,6 +289,16 @@ def main():
 
     updater.dispatcher.add_handler(conv_handler)
 
+    conv_handler_2 = ConversationHandler(
+        [MessageHandler(Filters.regex('^Найти по имени$'), ask_worker_name)],
+
+        states = {
+            WORKER_NAME: [MessageHandler(Filters.text & ~Filters.command, finish_worker_name)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+    )
+
+    updater.dispatcher.add_handler(conv_handler_2)
 
     updater.start_polling()
     updater.idle()
