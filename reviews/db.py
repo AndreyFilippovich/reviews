@@ -49,6 +49,7 @@ def init_db(conn, force: bool = False):
 
     conn.commit()
 
+
 @ensure_connection
 def add_message(conn, user_id: int, name: str, worker: str, activity: str, review: str, link: str,):
     c = conn.cursor()
@@ -62,18 +63,13 @@ def add_message(conn, user_id: int, name: str, worker: str, activity: str, revie
                                                                          ))
     conn.commit()
 
-@ensure_connection
-def all_workers(conn, worker ='', limit: int = 10, offset: int = '20'):
-    c = conn.cursor()
-    c.execute('SELECT worker FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ? OFFSET ?', (worker, limit, offset))
-    (res, ) = c.fetchone()
-    return res
 
 @ensure_connection
-def list_messages(conn, user_id: int, limit: int = 10):
+def get_all_reviews(conn, worker = '', limit: int = 10, offset: int = '20'):
     c = conn.cursor()
-    c.execute('SELECT worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ?', (user_id, limit))
+    c.execute('SELECT worker FROM user_review ORDER BY id DESC LIMIT ? OFFSET ?', (worker, limit, offset))
     return c.fetchall()
+
 
 @ensure_connection
 def list_of_workers(conn, worker = '', limit: int = 10):
@@ -81,7 +77,16 @@ def list_of_workers(conn, worker = '', limit: int = 10):
     c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ?', (worker, limit))
     return c.fetchall()
 
-'''Функции для запросов к БД по дизайнерам'''
+
+@ensure_connection
+def list_of_user_messages(conn, user_id: int = '', limit: int = 10, offset: int = '20'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?', (user_id, limit, offset))
+    return c.fetchall()
+
+
+'''Функции для запросов к БД по профессиям'''
+
 
 @ensure_connection
 def list_of_activities(conn, activities = '', limit: int = 10, offset: int = '20'):
