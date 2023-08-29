@@ -1108,27 +1108,9 @@ def callback_handler(update: Update, context: CallbackContext):
     user = update.effective_user
     callback_data = update.callback_query.data
     current_text = update.effective_message.text
-    print(user)
-
-    if callback_data == COMMAND_LIST:
-        messages = list_of_user_messages(user_id=user.id, limit=5, offset = 5)
-        update.callback_query.edit_message_text(
-            text = '\n\n'.join([f'Кто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
-            reply_markup=main_button,
-        )
 
 
-
-    elif callback_data == COMMAND_ACTIVITY:
-        update.callback_query.edit_message_text(
-            text="Выберите профессию, по которой хотите найти отзывы",
-            reply_markup=get_activities_page_one(),
-        )
-
-######################   ДИЗАЙН   ######################
-
-
-    elif callback_data == COMMAND_DESIGN:
+    if callback_data == COMMAND_DESIGN:
         messages = list_of_activities(activities='Дизайн', limit=5, offset = 0)
         if not messages:
             text = 'Про дизайнеров ещё не оставляли отзывов'

@@ -25,15 +25,7 @@ def all_reviews(update, context):
 
 
 
-def callback_handler(update: Update, context: CallbackContext):
-    data = update.callback_query.data
 
-
-    if data == 'all_reviews':
-        context.bot.send_message(
-        update.effective_chat.id,
-        text='Пока закончим',
-    )
 
 
 
@@ -79,7 +71,15 @@ def find_by_name(update, context):
 
 
 
-
+#def callback_handler(update: Update, context: CallbackContext):
+#    data = update.callback_query.data
+#
+#
+#    if data == 'all_reviews':
+#        context.bot.send_message(
+#        update.effective_chat.id,
+#        text='Пока закончим',
+#    )
 
 
 

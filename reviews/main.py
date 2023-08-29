@@ -45,7 +45,7 @@ def main():
     updater = Updater(token=secret_token)
 #    updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Посмотреть все имена$'), get_all_workers))
 
-    updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
+#    updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
     updater.dispatcher.add_handler(CallbackQueryHandler(check_callback))
 
     updater.dispatcher.add_handler(CommandHandler('start', start))

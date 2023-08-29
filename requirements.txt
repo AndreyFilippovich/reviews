@@ -9,7 +9,6 @@ cffi==1.15.1
 charset-normalizer==2.0.12
 colorama==0.4.5
 cryptography==38.0.1
-Django==3.2.13
 future==0.18.2
 idna==3.3
 importlib-metadata==4.12.0
