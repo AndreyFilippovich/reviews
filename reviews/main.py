@@ -4,8 +4,8 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters,
 
 from config import secret_token
 
-from leave_feedback import *
-from find_feedback import *
+from leave_review import *
+from find_review import *
 from start import start, help
 
 from keyboards import get_activities_page_one, get_activities_page_two
@@ -40,13 +40,19 @@ def check_callback(update, context):
         pass
 
 
+
 def main():
 
     updater = Updater(token=secret_token)
-#    updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Посмотреть все имена$'), get_all_workers))
 
-#    updater.dispatcher.add_handler(CallbackQueryHandler(callback_handler))
-    updater.dispatcher.add_handler(CallbackQueryHandler(check_callback))
+    main_handler = CallbackQueryHandler(check_callback)
+    my_reviews_handler = CallbackQueryHandler(my_reviews_callback, pattern='^reviews#')
+    all_reviews_handler = CallbackQueryHandler(all_reviews_callback, pattern='^all_reviews#')
+
+    updater.dispatcher.add_handler(all_reviews_handler)
+    updater.dispatcher.add_handler(my_reviews_handler)
+    updater.dispatcher.add_handler(main_handler)
+    
 
     updater.dispatcher.add_handler(CommandHandler('start', start))
     updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Помощь$'), help))

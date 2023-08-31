@@ -7,11 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-secret_token = os.getenv('TOKEN')
-secret_chat_id = os.getenv('CHAT_ID')
-secret_feedback_chat_id = os.getenv('FEEDBACK_USER_ID')
+from config import *
 
-bot = telegram.Bot(token=secret_token)
 
 
 def ensure_connection(func):
@@ -63,6 +60,41 @@ def add_message(conn, user_id: int, name: str, worker: str, activity: str, revie
                                                                          ))
     conn.commit()
 
+# ----------------- Отзывы пользователя -----------------
+
+@ensure_connection
+def count_of_users_messages(conn, user_id: int):
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM user_review WHERE user_id = ?', (user_id, ))
+    (res, ) = c.fetchone()
+    return res
+
+@ensure_connection
+def list_of_user_messages(conn, user_id: int, limit: int = 5, offset: int = '1'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?', (user_id, limit, offset))
+    return c.fetchall()
+
+
+# ----------------- Все отзывы -----------------
+
+@ensure_connection
+def count_of_all_messages(conn, ):
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM user_review', ())
+    (res, ) = c.fetchone()
+    return res
+
+@ensure_connection
+def list_of_all_messages(conn, limit: int = 5, offset: int = '1'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review ORDER BY id DESC LIMIT ? OFFSET ?', (limit, offset))
+    return c.fetchall()
+
+# ----------------- Отзывы по профессиям -----------------
+
+
+
 
 @ensure_connection
 def get_all_reviews(conn, worker = '', limit: int = 10, offset: int = '20'):
@@ -78,11 +110,7 @@ def list_of_workers(conn, worker = '', limit: int = 10):
     return c.fetchall()
 
 
-@ensure_connection
-def list_of_user_messages(conn, user_id: int = '', limit: int = 10, offset: int = '20'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?', (user_id, limit, offset))
-    return c.fetchall()
+
 
 
 '''Функции для запросов к БД по профессиям'''
