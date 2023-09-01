@@ -1,6 +1,8 @@
 import aiohttp
 from aiohttp import ClientSession
 
+# Делать через request
+
 
 from config import chat_id, bot_url
 from keyboards import subscribe_keyboard, start_keyboard, SUBSCRIBE

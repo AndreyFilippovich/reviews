@@ -7,9 +7,7 @@ from config import secret_token
 from leave_review import *
 from find_review import *
 from start import start, help
-
-from keyboards import get_activities_page_one, get_activities_page_two
-
+from activity.designer import *
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -20,6 +18,7 @@ def error(update, context):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
 
+spisok = ['designer', 'target', 'manager', 'content_manager', 'marketolog', 'producer', 'blogger_manager']
 
 def check_callback(update, context):
     """Функция-обработчик callback запросов"""
@@ -36,6 +35,8 @@ def check_callback(update, context):
         find_by_activity(update, context)
     elif data == 'find_by_name':
         find_by_name(update, context)
+    elif data in spisok:
+        designer_reviews(update, context, data)
     else:
         pass
 
@@ -48,7 +49,9 @@ def main():
     main_handler = CallbackQueryHandler(check_callback)
     my_reviews_handler = CallbackQueryHandler(my_reviews_callback, pattern='^reviews#')
     all_reviews_handler = CallbackQueryHandler(all_reviews_callback, pattern='^all_reviews#')
+    designer_reviews_handler = CallbackQueryHandler(designer_reviews_callback, pattern='^designer_reviews#')
 
+    updater.dispatcher.add_handler(designer_reviews_handler)
     updater.dispatcher.add_handler(all_reviews_handler)
     updater.dispatcher.add_handler(my_reviews_handler)
     updater.dispatcher.add_handler(main_handler)

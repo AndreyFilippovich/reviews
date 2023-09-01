@@ -93,6 +93,22 @@ def list_of_all_messages(conn, limit: int = 5, offset: int = '1'):
 
 # ----------------- Отзывы по профессиям -----------------
 
+@ensure_connection
+def count_of_activities(conn, activities = ''):
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM user_review WHERE activity = ?', (activities, ))
+    (res, ) = c.fetchone()
+    return res
+
+
+@ensure_connection
+def list_of_activities(conn, activities = '', limit: int = 1, offset: int = '1'):
+    c = conn.cursor()
+    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ? ORDER BY id DESC LIMIT ? OFFSET ?', (activities, limit, offset))
+    return c.fetchall()
+
+
+
 
 
 
@@ -107,17 +123,4 @@ def get_all_reviews(conn, worker = '', limit: int = 10, offset: int = '20'):
 def list_of_workers(conn, worker = '', limit: int = 10):
     c = conn.cursor()
     c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ?', (worker, limit))
-    return c.fetchall()
-
-
-
-
-
-'''Функции для запросов к БД по профессиям'''
-
-
-@ensure_connection
-def list_of_activities(conn, activities = '', limit: int = 10, offset: int = '20'):
-    c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ? ORDER BY id DESC LIMIT ? OFFSET ?', (activities, limit, offset))
     return c.fetchall()

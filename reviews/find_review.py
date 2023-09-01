@@ -129,13 +129,7 @@ def find_by_activity_2(update, context):
     )
 
 
-'designer'
-'target'
-'manager'
-'content_manager'
-'marketolog'
-'producer'
-'blogger_manager'
+
 
 
 # ----------------- Поиск отзывов по имени -----------------
