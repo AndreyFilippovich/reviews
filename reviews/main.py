@@ -36,7 +36,7 @@ def check_callback(update, context):
     elif data == 'find_by_name':
         find_by_name(update, context)
     elif data in spisok:
-        designer_reviews(update, context, data)
+        find_by_prof(update, context, data)
     else:
         pass
 
@@ -49,9 +49,9 @@ def main():
     main_handler = CallbackQueryHandler(check_callback)
     my_reviews_handler = CallbackQueryHandler(my_reviews_callback, pattern='^reviews#')
     all_reviews_handler = CallbackQueryHandler(all_reviews_callback, pattern='^all_reviews#')
-    designer_reviews_handler = CallbackQueryHandler(designer_reviews_callback, pattern='^designer_reviews#')
+    prof_reviews_handler = CallbackQueryHandler(prof_reviews_callback, pattern=r'\w{6,15}_reviews#')
 
-    updater.dispatcher.add_handler(designer_reviews_handler)
+    updater.dispatcher.add_handler(prof_reviews_handler)
     updater.dispatcher.add_handler(all_reviews_handler)
     updater.dispatcher.add_handler(my_reviews_handler)
     updater.dispatcher.add_handler(main_handler)
