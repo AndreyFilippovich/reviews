@@ -30,3 +30,13 @@ get_activities_page_two = [
     [InlineKeyboardButton(text='Менеджер по блогерам', callback_data='blogger_manager')],
     [InlineKeyboardButton(text='Назад', callback_data='back')],
 ]
+
+subscribe_keyboard = [
+    [InlineKeyboardButton(text="Подписаться тут", callback_data=NONSUBSCRIBE, url="https://t.me/test_for_reviews")],
+    [InlineKeyboardButton(text='Я уже подписан', callback_data=SUBSCRIBE)],
+]
+
+
+start_keyboard = [
+    [InlineKeyboardButton('Запустить бота', callback_data=MAIN_MENU)],
+]

@@ -24,3 +24,10 @@ COMMAND_MARKETOLOG = 'marketolog'
 COMMAND_PRODUCER = 'producer'
 COMMAND_BLOGGER_MANAGER = 'blogger_manager'
 COMMAND_BACK = 'back'
+
+NONSUBSCRIBE = 'nonsubscribe'
+SUBSCRIBE = 'check_start_subscription'
+
+MAIN_MENU = 'main_menu'
+
+SUBSCRIBE = "check_start_subscription"

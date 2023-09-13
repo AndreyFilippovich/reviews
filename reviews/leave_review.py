@@ -12,19 +12,22 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMar
 from telegram.ext import ConversationHandler
 from datetime import datetime
 
+def present_time():
+    today = datetime.utcnow()
+    return today
 
 
 
 def facts_to_str(user_data):
     
-    facts = list() 
+    facts = list()
     for key, value in user_data.items():
         facts.append('{} - {}'.format(key, value))
 
     return "\n".join(facts).join(['\n', '\n'])
 
 NAME, WORKER, ACTIVITY, REVIEW, PHOTO, LINK, CONFIRMATION = range(7)
-today = datetime.today().strftime('%Y-%m-%d-%H-%M-%S')
+
 
 
 def leave_review(update, context):
@@ -96,9 +99,9 @@ def photo(update, context):
     user = update.message.from_user
     user_data = context.user_data
     photo_file = update.message.photo[-1].get_file()
-    photo_file.download(f'photos/{user.first_name}.{today}_photo.jpg')
+    photo_file.download(f'photos/{user.first_name}.{present_time()}_photo.jpg')
     category = 'Фото'
-    user_data[category] = f'photos/{user.first_name}.{today}_photo.jpg'
+    user_data[category] = f'photos/{user.first_name}.{present_time()}_photo.jpg'
     logger.info("Фотография %s: %s", user.first_name, f'{user.first_name}_photo.jpg')
     update.message.reply_text('Замечательно! Остался последний пункт.'
                               'Укажите ссылку на компанию!\n\n'
@@ -128,26 +131,21 @@ def link(update, context):
     text = update.message.text
     user_data[category] = text 
     logger.info("Ссылка %s: %s", user.first_name, text)
-    bot.send_photo(chat_id=user.id, photo=open(f'photos/{user.first_name}.{today}_photo.jpg', 'rb'),
+    bot.send_photo(chat_id=user.id, photo=open(f'photos/{user.first_name}.{present_time()}_photo.jpg', 'rb'),
                    caption='Спасибо вам за отзыв! Пожалуйста, проверьте информацию на корректность:\n\n'
                    '{}'.format(facts_to_str(user_data)), reply_markup=markup)
-    
-
-#    update.message.reply_text('Спасибо вам за отзыв! Пожалуйста, проверьте информацию на корректность:'
-#                              '{}'.format(facts_to_str(user_data)), reply_markup=markup)
 
     return CONFIRMATION
 
 def confirmation(update, context):
-    chat_id = update.message.chat_id
     user_data = context.user_data
     user = update.message.from_user
     update.message.reply_text('Спасибо! Информация будет отправлена менеджеру на модерацию', reply_markup=main_button)
-    bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'photos/{user.first_name}.{today}_photo.jpg', 'rb'), 
+    bot.send_photo(chat_id=secret_feedback_chat_id, photo=open(f'photos/{user.first_name}.{present_time()}_photo.jpg', 'rb'), 
                    caption="Новый отзыв от пользователя {}".format(user.name) + ":\n {}".format(facts_to_str(user_data)),
                    parse_mode=telegram.ParseMode.HTML, reply_markup=InlineKeyboardMarkup(manager_keyboard))
     
-    print(user_data)
+    print(user_data['Фото'])
 
     add_message(
         user_id=user.id,
@@ -155,7 +153,7 @@ def confirmation(update, context):
         worker=user_data['О ком отзыв'],
         activity=user_data['Сфера деятельности'],
         review=user_data['Отзыв'],
-        phto=user_data['Фото'],
+        photo=user_data['Фото'],
         link=user_data['Ссылка']
     )
 

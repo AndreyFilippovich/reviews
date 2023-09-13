@@ -8,6 +8,8 @@ from leave_review import *
 from find_review import *
 from start import start, help
 from activity.designer import *
+from registration import *
+from constants.messages import PREWELCOME_MESSAGE
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
@@ -20,10 +22,21 @@ def error(update, context):
 
 spisok = ['designer', 'target', 'manager', 'content_manager', 'marketolog', 'producer', 'blogger_manager']
 
+def prestart(update, context):
+    chat = update.effective_chat
+    name = update.message.chat.first_name
+    context.bot.send_message(
+        chat_id=chat.id,
+        text=PREWELCOME_MESSAGE.format(name),
+        reply_markup=InlineKeyboardMarkup(subscribe_keyboard)
+    )
+
 def check_callback(update, context):
     """Функция-обработчик callback запросов"""
     data = update.callback_query.data
-    if data == 'all_reviews':
+    if data == 'main_menu':
+        start(update, context)
+    elif data == 'all_reviews':
         all_reviews(update, context)
     elif data == 'my_reviews':
         my_reviews(update, context)
@@ -45,21 +58,25 @@ def check_callback(update, context):
 def main():
 
     updater = Updater(token=secret_token)
-
+    
+    check_subscribe = CallbackQueryHandler(check_start_subscription, pattern=SUBSCRIBE)
     main_handler = CallbackQueryHandler(check_callback)
     my_reviews_handler = CallbackQueryHandler(my_reviews_callback, pattern='^reviews#')
     all_reviews_handler = CallbackQueryHandler(all_reviews_callback, pattern='^all_reviews#')
     prof_reviews_handler = CallbackQueryHandler(prof_reviews_callback, pattern=r'\w{6,15}_reviews#')
 
+    
+    updater.dispatcher.add_handler(check_subscribe)
     updater.dispatcher.add_handler(prof_reviews_handler)
     updater.dispatcher.add_handler(all_reviews_handler)
     updater.dispatcher.add_handler(my_reviews_handler)
     updater.dispatcher.add_handler(main_handler)
     
 
-    updater.dispatcher.add_handler(CommandHandler('start', start))
+    updater.dispatcher.add_handler(CommandHandler('start', prestart))
     updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Помощь$'), help))
     updater.dispatcher.add_handler(MessageHandler(Filters.regex('^Найти отзыв$'), find_review))
+
 
     conv_handler = ConversationHandler(
         [MessageHandler(Filters.regex('^Оставить отзыв$'), leave_review)],

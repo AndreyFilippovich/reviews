@@ -25,7 +25,7 @@ def my_reviews_base(update, context):
     user = update.effective_user.id
     count_messages = count_of_users_messages(user_id=user)
     messages = list_of_user_messages(user_id=user, limit=1, offset=0)
-    return '\n\n'.join([f'Вы написали всего {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+    return '\n\n'.join([f'Вы написали всего {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nФото: {message_photo} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_photo, message_link in messages]),
 
 
 def my_reviews(update, context):
@@ -62,7 +62,7 @@ def my_reviews_callback(update, context):
 
     messages = list_of_user_messages(user_id=user, limit=1, offset=page-1)
     query.edit_message_text(
-        text = '\n\n'.join([f'Вы написали всего {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+        text = '\n\n'.join([f'Вы написали всего {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nФото: {message_photo} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_photo, message_link in messages]),
         reply_markup=paginator.markup,
         parse_mode='Markdown'
     )
@@ -73,7 +73,7 @@ def my_reviews_callback(update, context):
 def all_reviews_base(update, context):
     count_messages = count_of_all_messages()
     messages = list_of_all_messages(limit=1, offset=0)
-    return '\n\n'.join([f'Всего написано {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+    return '\n\n'.join([f'Всего написано {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nФото: {message_photo} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_photo, message_link in messages]),
 
 
 def all_reviews(update, context):
@@ -108,7 +108,7 @@ def all_reviews_callback(update, context):
 
     messages = list_of_all_messages(limit=1, offset=page-1)
     query.edit_message_text(
-        text = '\n\n'.join([f'Всего написано {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_link in messages]),
+        text = '\n\n'.join([f'Всего написано {count_messages} отзывов \nКто написал отзыв: {message_name} \nО ком отзыв: {message_worker} \nИз какой сферы человек: {message_activity} \nОтзыв: {message_review} \nФото: {message_photo} \nСсылка: {message_link}' for message_name, message_worker, message_activity, message_review, message_photo, message_link in messages]),
         reply_markup=paginator.markup,
         parse_mode='Markdown'
     )

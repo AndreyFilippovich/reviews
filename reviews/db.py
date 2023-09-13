@@ -40,6 +40,7 @@ def init_db(conn, force: bool = False):
             worker        TEXT NOT NULL,
             activity        TEXT NOT NULL,
             review        TEXT NOT NULL,
+            photo        TEXT NOT NULL,
             link        TEXT NOT NULL
         )
     ''')
@@ -48,14 +49,15 @@ def init_db(conn, force: bool = False):
 
 
 @ensure_connection
-def add_message(conn, user_id: int, name: str, worker: str, activity: str, review: str, link: str,):
+def add_message(conn, user_id: int, name: str, worker: str, activity: str, review: str, photo: str, link: str,):
     c = conn.cursor()
-    c.execute('INSERT INTO user_review (user_id, name, worker, activity, review, link) VALUES (?, ?, ?, ?, ?, ?)', (
+    c.execute('INSERT INTO user_review (user_id, name, worker, activity, review, photo, link) VALUES (?, ?, ?, ?, ?, ?, ?)', (
                                                                          user_id,
                                                                          name,
                                                                          worker,
                                                                          activity,
                                                                          review,
+                                                                         photo,
                                                                          link
                                                                          ))
     conn.commit()
@@ -72,7 +74,7 @@ def count_of_users_messages(conn, user_id: int):
 @ensure_connection
 def list_of_user_messages(conn, user_id: int, limit: int = 5, offset: int = '1'):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?', (user_id, limit, offset))
+    c.execute('SELECT name, worker, activity, review, photo, link FROM user_review WHERE user_id = ? ORDER BY id DESC LIMIT ? OFFSET ?', (user_id, limit, offset))
     return c.fetchall()
 
 
@@ -88,7 +90,7 @@ def count_of_all_messages(conn, ):
 @ensure_connection
 def list_of_all_messages(conn, limit: int = 5, offset: int = '1'):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review ORDER BY id DESC LIMIT ? OFFSET ?', (limit, offset))
+    c.execute('SELECT name, worker, activity, review, photo, link FROM user_review ORDER BY id DESC LIMIT ? OFFSET ?', (limit, offset))
     return c.fetchall()
 
 # ----------------- Отзывы по профессиям -----------------
@@ -104,7 +106,7 @@ def count_of_activities(conn, activities = ''):
 @ensure_connection
 def list_of_activities(conn, activities = '', limit: int = 1, offset: int = '1'):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE activity = ? ORDER BY id DESC LIMIT ? OFFSET ?', (activities, limit, offset))
+    c.execute('SELECT name, worker, activity, review, photo, link FROM user_review WHERE activity = ? ORDER BY id DESC LIMIT ? OFFSET ?', (activities, limit, offset))
     return c.fetchall()
 
 
@@ -122,5 +124,5 @@ def get_all_reviews(conn, worker = '', limit: int = 10, offset: int = '20'):
 @ensure_connection
 def list_of_workers(conn, worker = '', limit: int = 10):
     c = conn.cursor()
-    c.execute('SELECT name, worker, activity, review, link FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ?', (worker, limit))
+    c.execute('SELECT name, worker, activity, review, photo, link FROM user_review WHERE worker = ? ORDER BY id DESC LIMIT ?', (worker, limit))
     return c.fetchall()
